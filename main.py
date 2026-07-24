@@ -12,6 +12,7 @@ from config import MAX_ITERS
 def main() -> None:
     parser = argparse.ArgumentParser(description="AI Code Assistant")
     parser.add_argument("user_prompt", type=str, help="Prompt to send to Gemini")
+    parser.add_argument("--dir", type=str, default=".", help="Working directory for the agent to operate in")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
 
@@ -19,6 +20,11 @@ def main() -> None:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY environment variable not set")
+
+    working_dir = os.path.abspath(args.dir)
+    if not os.path.isdir(working_dir):
+        print(f"Error: '{args.dir}' is not a valid directory")
+        sys.exit(1)
 
     client = genai.Client(api_key=api_key)
     messages: list[types.Content] = [
@@ -29,7 +35,7 @@ def main() -> None:
 
     for _ in range(MAX_ITERS):
         try:
-            final_response = generate_content(client, messages, args.verbose)
+            final_response = generate_content(client, messages, working_dir, args.verbose)
             if final_response:
                 print("Final response:")
                 print(final_response)
@@ -41,7 +47,7 @@ def main() -> None:
     sys.exit(1)
 
 def generate_content(
-    client: genai.Client, messages: list[types.Content], verbose: bool
+    client: genai.Client, messages: list[types.Content], working_dir: str, verbose: bool
 ) -> str | None:
     response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -67,7 +73,7 @@ def generate_content(
 
     function_responses: list[types.Part] = []
     for function_call in response.function_calls:
-        result = call_function(function_call, verbose)
+        result = call_function(function_call, working_dir, verbose)
         if (
             not result.parts
             or not result.parts[0].function_response
