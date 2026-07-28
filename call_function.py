@@ -5,6 +5,7 @@ from functions.get_files_info import get_files_info, schema_get_files_info
 from functions.run_python_file import run_python_file, schema_run_python_file
 from functions.write_file import schema_write_file, write_file
 from functions.search_files import search_files, schema_search_files
+from functions.run_tests import run_tests, schema_run_tests
 
 available_functions = types.Tool(
     function_declarations=[
@@ -13,6 +14,7 @@ available_functions = types.Tool(
         schema_run_python_file,
         schema_write_file,
         schema_search_files,
+        schema_run_tests,
     ]
 )
 
@@ -22,6 +24,7 @@ function_map: dict[str, Callable[..., str]] = {
     "run_python_file": run_python_file,
     "write_file": write_file,
     "search_files": search_files,
+    "run_tests": run_tests,
 }
 
 
