@@ -50,6 +50,24 @@ def call_function(
 
     args = dict(function_call.args) if function_call.args else {}
     args["working_directory"] = working_dir
+
+    if function_name == "write_file":
+        file_path = args.get("file_path", "unknown")
+        content = args.get("content", "")
+        print(f"\nThe agent wants to write to: {file_path}")
+        print(f"--- Proposed content ---\n{content}\n--- End content ---")
+        approval = input("Allow this write? (y/n): ").strip().lower()
+        if approval != "y":
+            return types.Content(
+                role="tool",
+                parts=[
+                    types.Part.from_function_response(
+                        name=function_name,
+                        response={"error": "Write denied by user"},
+                    )
+                ],
+            )
+
     result = function_map[function_name](**args)
 
     return types.Content(
