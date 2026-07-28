@@ -83,7 +83,7 @@ python main.py "find and fix the TypeError in main.py" --dir ./buggy-code --verb
 
 ## Tools
 
-The agent has access to five tools. Each tool enforces a directory boundary — it cannot operate outside the specified working directory.
+The agent has access to six tools. Each tool enforces a directory boundary — it cannot operate outside the specified working directory.
 
 | Tool | Description |
 |------|-------------|
@@ -92,6 +92,7 @@ The agent has access to five tools. Each tool enforces a directory boundary — 
 | `write_file` | Creates or overwrites a file |
 | `run_python_file` | Executes a Python file and captures stdout/stderr (30s timeout) |
 | `search_files` | Case-insensitive text search across all files, returns matching lines |
+| `run_tests` | Auto-detects pytest or unittest and runs the test suite (60s timeout) |
 
 ### Adding a New Tool
 
@@ -118,7 +119,9 @@ Each tool is a Python module in `functions/` with two exports: the function and 
 │   ├── get_file_content.py
 │   ├── write_file.py
 │   ├── run_python_file.py
-│   └── search_files.py
+│   ├── search_files.py
+│   └── run_tests.py
+├── test_agent_loop.py   # Agent loop tests with mocked Gemini responses
 └── calculator/          # Sample project for testing the agent
 ```
 
