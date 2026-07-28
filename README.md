@@ -28,7 +28,7 @@ User prompt
     └───────────┘
 ```
 
-All tool calls are sandboxed to the specified working directory — the agent cannot read, write, or execute files outside of it.
+All tool calls are sandboxed to the specified working directory — the agent cannot read, write, or execute files outside of it. Destructive actions (file writes) require explicit user approval before executing — the agent shows the proposed content and waits for confirmation.
 
 ## Setup
 
