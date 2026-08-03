@@ -8,6 +8,7 @@ from google.genai import types
 from prompts import system_prompt
 from call_function import available_functions, call_function
 from config import MAX_ITERS
+from memory import load_memory, save_memory, format_memory_for_prompt
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="AI Code Assistant")
@@ -27,27 +28,39 @@ def main() -> None:
         sys.exit(1)
 
     client = genai.Client(api_key=api_key)
+
+    history = load_memory(working_dir)
+    memory_context = format_memory_for_prompt(history)
+    user_message = args.user_prompt
+    if memory_context:
+        user_message = f"{args.user_prompt}\n\n{memory_context}"
+        if args.verbose:
+            print(f"Loaded {len(history)} previous session(s) from memory\n")
+
     messages: list[types.Content] = [
-        types.Content(role="user", parts=[types.Part(text=args.user_prompt)])
+        types.Content(role="user", parts=[types.Part(text=user_message)])
     ]
     if args.verbose:
         print(f"User prompt: {args.user_prompt}\n")
 
+    tools_used: list[str] = []
     for _ in range(MAX_ITERS):
         try:
-            final_response = generate_content(client, messages, working_dir, args.verbose)
+            final_response = generate_content(client, messages, working_dir, args.verbose, tools_used)
             if final_response:
                 print("Final response:")
                 print(final_response)
+                save_memory(working_dir, args.user_prompt, final_response, tools_used)
                 return
         except Exception as e:
             print(f"Error in generate_content: {e}")
 
     print(f"Maximum iterations ({MAX_ITERS}) reached")
+    save_memory(working_dir, args.user_prompt, "Max iterations reached", tools_used)
     sys.exit(1)
 
 def generate_content(
-    client: genai.Client, messages: list[types.Content], working_dir: str, verbose: bool
+    client: genai.Client, messages: list[types.Content], working_dir: str, verbose: bool, tools_used: list[str]
 ) -> str | None:
     response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -73,6 +86,8 @@ def generate_content(
 
     function_responses: list[types.Part] = []
     for function_call in response.function_calls:
+        if function_call.name and function_call.name not in tools_used:
+            tools_used.append(function_call.name)
         result = call_function(function_call, working_dir, verbose)
         if (
             not result.parts

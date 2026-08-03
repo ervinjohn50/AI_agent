@@ -44,7 +44,7 @@ class TestGenerateContent(unittest.TestCase):
             text="The bug is on line 5."
         )
         messages = []
-        result = generate_content(self.client, messages, self.working_dir, verbose=False)
+        result = generate_content(self.client, messages, self.working_dir, verbose=False, tools_used=[])
         self.assertEqual(result, "The bug is on line 5.")
         self.assertEqual(self.client.models.generate_content.call_count, 1)
 
@@ -56,7 +56,7 @@ class TestGenerateContent(unittest.TestCase):
             function_calls=[func_call]
         )
         messages = []
-        result = generate_content(self.client, messages, self.working_dir, verbose=False)
+        result = generate_content(self.client, messages, self.working_dir, verbose=False, tools_used=[])
         self.assertIsNone(result)
 
     def test_function_call_appends_tool_result_to_messages(self):
@@ -67,7 +67,7 @@ class TestGenerateContent(unittest.TestCase):
             function_calls=[func_call]
         )
         messages = []
-        generate_content(self.client, messages, self.working_dir, verbose=False)
+        generate_content(self.client, messages, self.working_dir, verbose=False, tools_used=[])
         last_message = messages[-1]
         self.assertEqual(last_message.role, "user")
         self.assertIsNotNone(last_message.parts[0].function_response)
@@ -80,7 +80,7 @@ class TestGenerateContent(unittest.TestCase):
             function_calls=[func_call]
         )
         messages = []
-        generate_content(self.client, messages, self.working_dir, verbose=False)
+        generate_content(self.client, messages, self.working_dir, verbose=False, tools_used=[])
         last_message = messages[-1]
         func_response = last_message.parts[0].function_response
         self.assertIn("error", func_response.response)
@@ -91,7 +91,7 @@ class TestGenerateContent(unittest.TestCase):
         self.client.models.generate_content.return_value = response
         messages = []
         with self.assertRaises(RuntimeError):
-            generate_content(self.client, messages, self.working_dir, verbose=False)
+            generate_content(self.client, messages, self.working_dir, verbose=False, tools_used=[])
 
     def test_multiple_function_calls_in_single_response(self):
         func_calls = [
@@ -102,7 +102,7 @@ class TestGenerateContent(unittest.TestCase):
             function_calls=func_calls
         )
         messages = []
-        generate_content(self.client, messages, self.working_dir, verbose=False)
+        generate_content(self.client, messages, self.working_dir, verbose=False, tools_used=[])
         last_message = messages[-1]
         self.assertEqual(len(last_message.parts), 2)
         self.assertEqual(last_message.parts[0].function_response.name, "get_files_info")
@@ -127,7 +127,7 @@ class TestAgentLoop(unittest.TestCase):
         messages = []
         final = None
         for _ in range(15):
-            result = generate_content(self.client, messages, self.working_dir, verbose=False)
+            result = generate_content(self.client, messages, self.working_dir, verbose=False, tools_used=[])
             if result:
                 final = result
                 break
@@ -145,7 +145,7 @@ class TestAgentLoop(unittest.TestCase):
         max_iters = 5
         final = None
         for _ in range(max_iters):
-            result = generate_content(self.client, messages, self.working_dir, verbose=False)
+            result = generate_content(self.client, messages, self.working_dir, verbose=False, tools_used=[])
             if result:
                 final = result
                 break
